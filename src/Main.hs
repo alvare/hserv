@@ -17,19 +17,21 @@ import           System.Console.CmdArgs               (Data, Typeable, cmdArgs, 
 data Hserv = Hserv
              { port :: Int
              , verbose :: Bool
+             , dir :: FilePath
              }
              deriving (Data, Typeable)
 
 main :: IO()
 main = do
   hserv <- cmdArgs $ Hserv
-           { port = 8888 &= help "Port on which server should run" &= opt (8888::Int)
-           , verbose = False &= help "Log each request" }
+           { port = 8888 &= help "Port on which server should run"
+           , verbose = False &= help "Log each request"
+           , dir = "." &= help "Path to serve" }
            &= summary ("hserv " ++ showVersion version)
-  let Hserv {port=p, verbose=v} = hserv
-  let middleware = if v then logStdoutDev else id
-  putStrLn $ "Running hserv on port " ++ (show p)
-  putStrLn $ "Go to http://0.0.0.0:" ++ (show p)
-  run p $ middleware $ staticApp 
-        $ (defaultFileServerSettings ".") {ssAddTrailingSlash = True}
+  let Hserv {port=port', verbose=verbose', dir=dir'} = hserv
+  let middleware = if verbose' then logStdoutDev else id
+  putStrLn $ "Running hserv on port " ++ (show port')
+  putStrLn $ "Go to http://0.0.0.0:" ++ (show port')
+  run port' $ middleware $ staticApp
+            $ (defaultFileServerSettings dir') {ssAddTrailingSlash = True}
 
